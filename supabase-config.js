@@ -1,6 +1,5 @@
-// Replace these values with the Supabase Project URL and publishable (anon) key.
-// The publishable key is intended for browser use. Never put a service_role/secret key here.
+// Supabase browser configuration. The publishable key is safe to expose; never use a secret key here.
 window.SUPABASE_CONFIG = {
-  url: '',
-  anonKey: ''
+  url: 'https://cujjfsqtzuymyhnrlsos.supabase.co',
+  anonKey: 'sb_publishable_z7KYKS9-cZUVmC0sBtM3vQ_2E0Srniq'
 };
