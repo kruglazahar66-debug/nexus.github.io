@@ -15,13 +15,13 @@
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="Пароль — главная"><span class="brand-mark">p<span>.</span></span><span>пароль<span class="brand-sub">ГЕНЕРАТОР</span></span></a>
-      <span class="secure"><span class="secure-dot"></span>Генерируется у вас в браузере</span>
+      <div class="account-area"><span class="secure"><span class="secure-dot"></span>Генерируется у вас в браузере</span><button id="account-open" class="account-button">Войти</button><span id="account-email" class="account-email" hidden></span><button id="account-manage" class="account-button" hidden>Аккаунт</button><button id="sign-out" class="account-button" hidden>Выйти</button></div>
     </header>
 
     <section class="intro">
       <p class="eyebrow"><span class="eyebrow-line"></span>ПРОСТО. НАДЁЖНО. ВАШЕ.</p>
       <h1>Пароль,<br><span>который сложно</span><br>угадать.</h1>
-      <p class="intro-copy">Создайте надёжную комбинацию за пару секунд.<br class="desktop-only"> Никаких аккаунтов — только вы и ваш пароль.</p>
+      <p class="intro-copy">Создайте надёжную комбинацию за пару секунд.<br class="desktop-only"> Первые три генерации доступны без регистрации.</p>
     </section>
 
     <section class="generator card" aria-label="Генератор паролей">
@@ -40,6 +40,7 @@
         <div class="range-ends"><span>4</span><span>40</span></div>
       </div>
       <button id="generate" class="generate-button"><span>Создать пароль</span><span class="button-arrow">↗</span></button>
+      <p id="usage-status" class="usage-status" aria-live="polite"></p>
       <p class="privacy-note"><span>✳</span> Пароль не отправляется в интернет</p>
     </section>
 
@@ -50,6 +51,16 @@
     <footer><span>Сделано для спокойствия.</span><span>Ваш браузер · Ваши правила</span></footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="script.js"></script>
+  <dialog id="auth-dialog" class="auth-dialog" aria-labelledby="auth-title">
+    <form method="dialog" class="dialog-close-form"><button class="dialog-close" aria-label="Закрыть">×</button></form>
+    <p class="section-label">АККАУНТ</p><h2 id="auth-title">Продолжить работу</h2>
+    <p class="microcopy">После трёх пробных генераций войдите или создайте аккаунт.</p>
+    <div class="auth-tabs"><button type="button" class="auth-tab active" data-auth-mode="signup">Регистрация</button><button type="button" class="auth-tab" data-auth-mode="signin">Вход</button></div>
+    <form id="auth-form" class="auth-form"><label>Email<input id="auth-email" type="email" autocomplete="email" required maxlength="254"></label><label>Пароль<input id="auth-password" type="password" autocomplete="new-password" required minlength="8" maxlength="128"></label><button id="auth-submit" class="generate-button" type="submit">Создать аккаунт</button></form>
+    <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
+    <div id="account-actions" class="account-actions" hidden><p id="account-message"></p><button id="delete-account" class="delete-button" type="button">Удалить аккаунт и данные</button></div>
+  </dialog>
+  <script src="supabase-config.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
