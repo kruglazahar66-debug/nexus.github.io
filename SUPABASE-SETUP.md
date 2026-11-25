@@ -8,9 +8,20 @@ GitHub Pages размещает только статические файлы, 
 
 1. Создайте проект Supabase и добавьте адрес опубликованного сайта в Authentication → URL Configuration → Site URL и Redirect URLs. Разрешите URL сайта с `/**`.
 2. В `supabase-config.js` укажите Project URL и publishable key (или legacy anon key). Этот ключ предназначен для клиента. `service_role` и secret key в сайт или репозиторий не добавляйте.
-3. Примените `supabase/migrations/20261125000000_profiles.sql` через Supabase CLI (`supabase db push`) или SQL Editor. Она создаёт профиль с RLS и удалением профиля каскадом при удалении пользователя.
-4. Разверните Edge Function: `supabase functions deploy delete-account`.
-5. В Supabase Edge Function secrets задайте `SUPABASE_SERVICE_ROLE_KEY`. URL и anon key обычно уже заданы средой Supabase; если нет, задайте `SUPABASE_URL` и `SUPABASE_ANON_KEY`. Оставьте проверку JWT включённой для функции.
+3. Примените обе миграции через Supabase CLI (`supabase db push`) или SQL Editor: сначала `20261125000000_profiles.sql`, затем `20261126000000_admin_roles.sql`.
+4. Разверните Edge Functions: `supabase functions deploy delete-account` и `supabase functions deploy admin-users`.
+5. В secrets функций задайте `SUPABASE_SERVICE_ROLE_KEY`. URL и anon key обычно уже заданы средой Supabase; если нет, задайте `SUPABASE_URL` и `SUPABASE_ANON_KEY`. Оставьте проверку JWT включённой для функций.
+6. Создайте администратора: зарегистрируйте нужный email через сайт и подтвердите почту. Затем в Supabase SQL Editor выполните запрос ниже, заменив адрес на свой. Это выдаст admin-права именно этому аккаунту; пароль задаётся отдельно при регистрации и хранится Supabase Auth.
+
+```sql
+update public.profiles as p
+set role = 'admin'
+from auth.users as u
+where p.id = u.id
+  and lower(u.email) = lower('ВАШ_EMAIL');
+```
+
+После этого войдите на сайт под этим email и паролем. В меню «Аккаунт» появится панель администратора: список всех аккаунтов и удаление обычных пользователей. Роль проверяется серверной Edge Function; обычный пользователь не может вызвать админ-действия. Роль нельзя назначить через публичную форму.
 6. Опубликуйте статические файлы сайта вместе с `supabase-config.js`.
 
 ## Как работает лимит
@@ -19,4 +30,4 @@ GitHub Pages размещает только статические файлы, 
 
 ## Удаление
 
-Кнопка вызывает `delete-account`. Функция проверяет JWT вызывающего пользователя и удаляет только его запись Auth; профиль удаляется через `ON DELETE CASCADE`. Не храните в `profiles` или других таблицах пользовательские данные без внешнего ключа с каскадным удалением, иначе они не удалятся автоматически.
+Кнопка пользователя вызывает `delete-account`, а удаление аккаунта администратором защищено отдельной проверкой роли на сервере. Обе функции проверяют JWT; профиль удаляется через `ON DELETE CASCADE`. Не храните в `profiles` или других таблицах пользовательские данные без внешнего ключа с каскадным удалением, иначе они не удалятся автоматически. Администратор не может удалить собственную учетную запись через панель.

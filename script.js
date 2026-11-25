@@ -20,6 +20,7 @@ let latestPassword = '';
 let toastTimer;
 let authMode = 'signup';
 let currentUser = null;
+let isAdmin = false;
 const passwords = [];
 const alphabet = 'abcdefghijklmnopqrstuvwxyz';
 const symbols = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
@@ -98,6 +99,7 @@ function setAuthMessage(message, isError = false) {
 
 function updateAccountUI(user) {
   currentUser = user || null;
+  if (!currentUser) isAdmin = false;
   const email = document.querySelector('#account-email');
   email.hidden = !currentUser;
   email.textContent = currentUser?.email || '';
@@ -105,11 +107,23 @@ function updateAccountUI(user) {
   document.querySelector('#account-manage').hidden = !currentUser;
   document.querySelector('#sign-out').hidden = !currentUser;
   document.querySelector('#account-actions').hidden = !currentUser;
+  document.querySelector('#admin-open').hidden = !currentUser || !isAdmin;
   document.querySelector('#account-message').textContent = currentUser ? `Выполнен вход: ${currentUser.email}` : '';
   document.querySelector('#auth-form').hidden = Boolean(currentUser);
   document.querySelector('.auth-tabs').hidden = Boolean(currentUser);
   document.querySelector('#auth-title').textContent = currentUser ? 'Ваш аккаунт' : authMode === 'signup' ? 'Создать аккаунт' : 'С возвращением';
   updateUsageStatus();
+}
+
+async function setCurrentUser(user) {
+  currentUser = user || null;
+  isAdmin = false;
+  updateAccountUI(currentUser);
+  if (!currentUser || !supabase) return;
+  const { data, error } = await supabase.from('profiles').select('role').eq('id', currentUser.id).maybeSingle();
+  if (error) return;
+  isAdmin = data?.role === 'admin';
+  updateAccountUI(currentUser);
 }
 
 function formatAuthError(error) {
@@ -128,6 +142,41 @@ document.querySelector('#account-manage').addEventListener('click', () => {
   setAuthMessage('');
   document.querySelector('#account-actions').hidden = false;
   authDialog.showModal();
+});
+
+document.querySelector('#admin-open').addEventListener('click', async () => {
+  const panel = document.querySelector('#admin-panel');
+  const message = document.querySelector('#admin-message');
+  const list = document.querySelector('#admin-user-list');
+  panel.hidden = false;
+  message.textContent = 'Загружаем пользователей…';
+  list.replaceChildren();
+  const { data, error } = await supabase.functions.invoke('admin-users', { body: { action: 'list' } });
+  if (error || !data?.users) { message.textContent = error?.message || 'Не удалось загрузить список.'; return; }
+  const { data: profiles, error: profilesError } = await supabase.from('profiles').select('id, role').in('id', data.users.map((user) => user.id));
+  if (profilesError) { message.textContent = `Не удалось определить права пользователей: ${profilesError.message}`; return; }
+  const roles = new Map(profiles.map((profile) => [profile.id, profile.role]));
+  message.textContent = `Аккаунтов: ${data.users.length}`;
+  data.users.forEach((user) => {
+    const role = roles.get(user.id) || 'user';
+    const row = document.createElement('li');
+    const identity = document.createElement('span');
+    identity.textContent = `${user.email} · ${role === 'admin' ? 'администратор' : 'пользователь'}`;
+    row.append(identity);
+    if (role !== 'admin') {
+      const remove = document.createElement('button');
+      remove.type = 'button'; remove.className = 'delete-button'; remove.textContent = 'Удалить';
+      remove.addEventListener('click', async () => {
+        if (!window.confirm(`Удалить аккаунт ${user.email}?`)) return;
+        remove.disabled = true;
+        const { error: deleteError } = await supabase.functions.invoke('admin-users', { body: { action: 'delete', userId: user.id } });
+        if (deleteError) { message.textContent = `Не удалось удалить: ${deleteError.message}`; remove.disabled = false; return; }
+        row.remove(); message.textContent = `Аккаунт ${user.email} удалён.`;
+      });
+      row.append(remove);
+    }
+    list.append(row);
+  });
 });
 
 document.querySelectorAll('.auth-tab').forEach((tab) => tab.addEventListener('click', () => {
@@ -155,7 +204,7 @@ document.querySelector('#auth-form').addEventListener('submit', async (event) =>
       const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.href } });
       if (error) throw error;
       if (data.session) {
-        updateAccountUI(data.user);
+        await setCurrentUser(data.user);
         authDialog.close();
         showToast('Аккаунт создан');
       } else {
@@ -164,7 +213,7 @@ document.querySelector('#auth-form').addEventListener('submit', async (event) =>
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      updateAccountUI(data.user);
+      await setCurrentUser(data.user);
       authDialog.close();
       showToast('Вы вошли в аккаунт');
     }
@@ -179,7 +228,7 @@ document.querySelector('#sign-out').addEventListener('click', async () => {
   if (!supabase) return;
   const { error } = await supabase.auth.signOut();
   if (error) { showToast('Не удалось выйти из аккаунта'); return; }
-  updateAccountUI(null);
+  await setCurrentUser(null);
   showToast('Вы вышли из аккаунта');
 });
 
@@ -198,7 +247,7 @@ document.querySelector('#delete-account').addEventListener('click', async () => 
     passwordOutput.textContent = 'Нажмите «Создать»';
     copyButton.disabled = true;
     renderHistory();
-    updateAccountUI(null);
+    await setCurrentUser(null);
     authDialog.close();
     showToast('Аккаунт и данные удалены');
   } catch (error) {
@@ -274,9 +323,9 @@ logEvent('Генератор готов к работе');
 if (!supabase) {
   document.querySelector('#account-open').title = 'Supabase ещё не настроен';
 } else {
-  supabase.auth.getSession().then(({ data }) => updateAccountUI(data.session?.user || null));
+  supabase.auth.getSession().then(({ data }) => setCurrentUser(data.session?.user || null));
   supabase.auth.onAuthStateChange((event, session) => {
-    updateAccountUI(session?.user || null);
+    setTimeout(() => void setCurrentUser(session?.user || null), 0);
     if (event === 'SIGNED_IN' && authDialog.open) authDialog.close();
   });
 }
