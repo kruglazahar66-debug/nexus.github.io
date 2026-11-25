@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101412">
+  <title>Пароль — генератор паролей</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Пароль — главная"><span class="brand-mark">p<span>.</span></span><span>пароль<span class="brand-sub">ГЕНЕРАТОР</span></span></a>
+      <span class="secure"><span class="secure-dot"></span>Генерируется у вас в браузере</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow"><span class="eyebrow-line"></span>ПРОСТО. НАДЁЖНО. ВАШЕ.</p>
+      <h1>Пароль,<br><span>который сложно</span><br>угадать.</h1>
+      <p class="intro-copy">Создайте надёжную комбинацию за пару секунд.<br class="desktop-only"> Никаких аккаунтов — только вы и ваш пароль.</p>
+    </section>
+
+    <section class="generator card" aria-label="Генератор паролей">
+      <div class="card-top"><div><p class="section-label">ВАШ НОВЫЙ ПАРОЛЬ</p><p class="microcopy">Настройте параметры и нажмите создать</p></div><span class="lock-icon" aria-hidden="true">⌑</span></div>
+      <div class="password-box"><output id="password" aria-live="polite">Нажмите «Создать»</output><button id="copy" class="icon-button" aria-label="Скопировать пароль" title="Скопировать" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg></button></div>
+      <div class="strength-row"><span id="strength" class="strength-label">ОЖИДАЕТ ГЕНЕРАЦИИ</span><span class="strength-track"><i id="strength-fill"></i></span><span id="length-value" class="length-badge">8 знаков</span></div>
+
+      <div class="settings">
+        <div class="setting-heading"><span class="section-label">СЛОЖНОСТЬ</span><span class="hint">Выберите набор символов</span></div>
+        <div class="level-options" role="group" aria-label="Уровень сложности">
+          <button class="level-option active" data-level="easy" aria-pressed="true"><span class="level-icon easy-icon">a<span>z</span></span><span class="level-text"><strong>Простой</strong><small>строчные буквы</small></span><span class="radio"></span></button>
+          <button class="level-option" data-level="hard" aria-pressed="false"><span class="level-icon hard-icon">A<span>9</span></span><span class="level-text"><strong>Сложный</strong><small>буквы, цифры, знаки</small></span><span class="radio"></span></button>
+        </div>
+        <div class="length-heading"><span class="section-label">ДЛИНА ПАРОЛЯ</span><span class="length-number"><strong id="length-number">8</strong> символов</span></div>
+        <input id="length" class="range" type="range" min="4" max="40" value="8" aria-label="Длина пароля">
+        <div class="range-ends"><span>4</span><span>40</span></div>
+      </div>
+      <button id="generate" class="generate-button"><span>Создать пароль</span><span class="button-arrow">↗</span></button>
+      <p class="privacy-note"><span>✳</span> Пароль не отправляется в интернет</p>
+    </section>
+
+    <section class="below-grid">
+      <div class="panel card"><div class="panel-heading"><div><p class="section-label">ПОСЛЕДНИЕ ПАРОЛИ</p><p class="microcopy">Созданные в этой сессии</p></div><button id="clear-history" class="text-button">Очистить</button></div><ul id="history" class="history-list"><li class="empty-state">Здесь появятся ваши пароли</li></ul></div>
+      <div class="panel card events-panel"><div class="panel-heading"><div><p class="section-label">ЖУРНАЛ СОБЫТИЙ</p><p class="microcopy">Что происходит в генераторе</p></div><span class="live-pill"><i></i>LIVE</span></div><ul id="events" class="events-list"></ul></div>
+    </section>
+    <footer><span>Сделано для спокойствия.</span><span>Ваш браузер · Ваши правила</span></footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
